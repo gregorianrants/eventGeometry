@@ -47,25 +47,20 @@ function negate(f){
     }
 }
 
-
-/*
-function sortAscending(arr) {
-    return [...arr].sort((a, b) => a - b)
-}
-*/
-
 function sortAscending(arr) {
     return [...arr].sort((a, b) => a.startTimeDecimal - b.startTimeDecimal)
 }
-
 
 function difference(arrayA, arrayB) {
     let ids = arrayA.map(event => event.id)
     return arrayB.filter(event => !ids.includes(event.id))
 }
 
-
 function extractSet(periods, condition) {
+    //builds a set by seeding it with first element in sorted periods,
+    //it is important to realise that order matters say we start with A then add D then add C
+    //C might only be added because because it belongs to set because of D. if we hadnt sorted to begin with it
+    //may not have been added to the set
     return (
         sortAscending(periods)
             .reduce(
@@ -80,29 +75,33 @@ function extractSetWith(condition){
     }
 }
 
-function buildSets(periods, extractionF, sets = []) {
+function buildSets({periods, extractionF, sets = []}) {
     if (periods.length === 0) return sets
     let set = extractionF(periods)
     return buildSets(
-        difference(set, periods),
-        extractionF,
-        [...sets, set])
+        {
+            periods: difference(set, periods),
+            extractionF,
+            sets: [...sets, set]}
+    )
+}
+
+function partialProps(fn,presetArgsObj) {
+    return function partiallyApplied(laterArgsObj){
+        return fn( Object.assign( {}, presetArgsObj, laterArgsObj ) );
+    };
 }
 
 function buildSetsWith(extractionF){
-    return (periods)=>{
-        return buildSets(periods,extractionF,[])
-    }
+    return partialProps(buildSets,{extractionF})
 }
-
-
 
 export default function groupEvents(events){
 
-    let overlappingSets = buildSetsWith(extractSetWith(overlaps))(events)
+    let overlappingSets = buildSetsWith(extractSetWith(overlaps))({periods: events})
 
     let withColumns = overlappingSets.map(set=>{
-        return buildSetsWith(extractSetWith(negate(overlaps)))(set)
+        return buildSetsWith(extractSetWith(negate(overlaps)))({periods: set})
     })
     return withColumns
 }

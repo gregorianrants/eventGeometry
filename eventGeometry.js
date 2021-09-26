@@ -1,4 +1,4 @@
-import groupEvents from './groupEvents'
+import groupEvents from './groupEvents.mjs'
 
 export function configure(height,border){
     const position = (
